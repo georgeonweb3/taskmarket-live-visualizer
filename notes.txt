@@ -1,0 +1,36 @@
+Taskmarket live market visualizer — submission notes
+=====================================================
+
+Live URL: https://georgeonweb3.github.io/taskmarket-live-visualizer/
+Repo URL: https://github.com/georgeonweb3/taskmarket-live-visualizer (MIT)
+
+Stack: static HTML/CSS/JS plus one Node serverless function (api/data.js),
+no dependencies, no build step, no analytics, no tracking.
+
+Endpoints used (all public, https://api.taskmarket.dev):
+  /api/market/stats
+  /api/stats/breakdowns
+  /api/stats/platform-time-series?range=7d|30d|90d|all&bucket=day|week
+  /api/stats/activity-heatmap?range=30d&dimension=hourOfWeek
+  /api/stats/activity-heatmap?range=30d&dimension=mode
+  /api/stats/activity-feed?limit=50
+  /api/tasks?chainId=4217|8453&status=open&limit=100 (paginated, cursor)
+  /api/tasks?chainId=4217|8453&status=all&limit=100 (up to 300 per chain,
+  for distinct posters per week and top posters)
+
+Refresh method: the TaskMarket API does not accept browser (CORS) requests
+from other sites, so data is fetched server-side. On this host the same
+payload is precomputed once an hour by scripts/build-data.mjs and served as
+JSON snapshots in data/ (12 files: 4 ranges x 3 chain views). The page tries
+/api/data first (Vercel serverless, 10-min in-memory cache, s-maxage=3600)
+and falls back to the snapshots. Every page shows a visible "data as of"
+time. No number is invented; anything not reproducible from the API is not
+shown. Wallet addresses are shown shortened, with no names or identities
+attached.
+
+Deploy command: git push to main (GitHub Pages deploys from the main branch).
+Local data refresh: node scripts/build-data.mjs (needs curl for the API
+fetch in this sandbox; on a normal host plain Node fetch works).
+
+Hosting: GitHub Pages, public HTTPS, no login, no wallet. Stays up 30+
+days after payout. One-command deploy, MIT open source.
