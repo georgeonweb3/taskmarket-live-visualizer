@@ -14,21 +14,28 @@ const chains = ["all", "4217", "8453"];
 
 for (const range of ranges) {
   for (const chain of chains) {
-    const req = { url: `/api/data?range=${range}&chain=${chain}` };
-    let body = null;
-    let code = null;
-    const res = {
-      setHeader() {},
-      status(c) { code = c; return this; },
-      json(d) { body = d; },
-    };
-    await handler(req, res);
-    if (code !== 200) {
-      console.error(`FAILED ${range}/${chain}: HTTP ${code}`, JSON.stringify(body).slice(0, 300));
-      process.exitCode = 1;
-      continue;
+    let done = false;
+    for (let attempt = 1; attempt <= 3 && !done; attempt++) {
+      const req = { url: `/api/data?range=${range}&chain=${chain}` };
+      let body = null;
+      let code = null;
+      const res = {
+        setHeader() {},
+        status(c) { code = c; return this; },
+        json(d) { body = d; },
+      };
+      await handler(req, res);
+      if (code === 200) {
+        writeFileSync(`${OUT}data-${range}-${chain}.json`, JSON.stringify(body));
+        console.log(`ok data-${range}-${chain}.json asOf=${body.asOf} series=${body.series.length} feed=${body.feed.length}`);
+        done = true;
+      } else if (attempt < 3) {
+        console.error(`RETRY ${range}/${chain} attempt ${attempt}: HTTP ${code}`);
+        await new Promise((r) => setTimeout(r, 5000));
+      } else {
+        console.error(`FAILED ${range}/${chain}: HTTP ${code}`, JSON.stringify(body).slice(0, 300));
+        process.exitCode = 1;
+      }
     }
-    writeFileSync(`${OUT}data-${range}-${chain}.json`, JSON.stringify(body));
-    console.log(`ok data-${range}-${chain}.json asOf=${body.asOf} series=${body.series.length} feed=${body.feed.length}`);
   }
 }
