@@ -22,12 +22,24 @@ const ago = (iso) => {
 const fmtTime = (iso) =>
   new Date(iso).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false });
 
+async function fetchData() {
+  // On Vercel the serverless function serves live data. On static hosts
+  // (GitHub Pages) the same payload is precomputed per range/chain by the
+  // hourly build (see scripts/build-data.mjs) and served as a JSON file.
+  const api = `/api/data?range=${state.range}&chain=${state.chain}`;
+  try {
+    const r = await fetch(api);
+    if (r.ok) return await r.json();
+  } catch (e) { /* fall through to the static snapshot */ }
+  const r2 = await fetch(`data/data-${state.range}-${state.chain}.json`);
+  if (!r2.ok) throw new Error("data unavailable (" + r2.status + ")");
+  return await r2.json();
+}
+
 async function load() {
   const err = $("#err");
   try {
-    const r = await fetch(`/api/data?range=${state.range}&chain=${state.chain}`);
-    if (!r.ok) throw new Error("API " + r.status);
-    data = await r.json();
+    data = await fetchData();
     err.hidden = true;
     render();
   } catch (e) {

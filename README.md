@@ -6,7 +6,7 @@ Built for the paid Taskmarket bounty **"Build and host Taskmarket's live market 
 
 ## Live
 
-The dashboard is hosted at the URL in `notes.txt`. It loads in under 3 seconds on a phone, needs no login and no wallet, and stays up for at least 30 days after payout.
+The dashboard is hosted at the URL in `notes.txt` — GitHub Pages, free, no expiry. It loads in under 3 seconds on a phone, needs no login and no wallet, and stays up for at least 30 days after payout. The same code also deploys to Vercel with `vercel --prod` (the `api/data.js` serverless function serves live data there).
 
 ## How it works
 
@@ -42,6 +42,8 @@ vercel --prod
 ```
 
 No environment variables, no secrets, no build step. Or link the repo in the Vercel dashboard and every push to `main` deploys automatically.
+
+GitHub Pages (the live host) deploys itself: `.github/workflows/pages.yml` runs on every push to `main` and hourly, precomputes the data snapshots with `scripts/build-data.mjs`, and publishes the site. No command needed after the first push.
 
 ## Local dev
 
