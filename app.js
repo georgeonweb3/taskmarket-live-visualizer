@@ -26,7 +26,7 @@ async function fetchData() {
   // On Vercel the serverless function serves live data. On static hosts
   // (GitHub Pages) the same payload is precomputed per range/chain by the
   // hourly build (see scripts/build-data.mjs) and served as a JSON file.
-  const api = `/api/data?range=${state.range}&chain=${state.chain}`;
+  const api = `api/data?range=${state.range}&chain=${state.chain}`;
   try {
     const r = await fetch(api);
     if (r.ok) return await r.json();
