@@ -6,6 +6,35 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import handler from "../api/data.js";
 
+// Memoize upstream fetches across the 12 combos: the payloads differ only
+// in range (time series) and chain (task-list slice). Without this, each
+// combo re-fetches ~16 upstream URLs — slow and flaky through a proxy.
+// Only successful JSON is cached; failures retry once after 3s and are not
+// cached. The handler's getJSON only needs { ok, json() } on the response.
+const fetchCache = new Map();
+const rawFetch = globalThis.fetch;
+globalThis.fetch = async (url, opts) => {
+  const key = String(url);
+  if (fetchCache.has(key)) {
+    const data = fetchCache.get(key);
+    return { ok: true, status: 200, json: async () => data };
+  }
+  let lastErr;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const r = await rawFetch(url, opts);
+      if (!r.ok) throw new Error(`HTTP ${r.status} from ${url}`);
+      const data = await r.json();
+      fetchCache.set(key, data);
+      return { ok: true, status: 200, json: async () => data };
+    } catch (e) {
+      lastErr = e;
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 3000));
+    }
+  }
+  throw lastErr;
+};
+
 const OUT = new URL("../data/", import.meta.url).pathname;
 mkdirSync(OUT, { recursive: true });
 
