@@ -1,0 +1,1 @@
+{"description":"Live market visualizer for Taskmarket (Tempo + Base), built for a paid Taskmarket bounty.","license":"MIT","name":"taskmarket-live-visualizer","private":false,"scripts":{"deploy":"vercel --prod","dev":"vercel dev"},"type":"module","version":"1.0.0"}
